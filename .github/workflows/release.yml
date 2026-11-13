@@ -28,8 +28,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # GitHub ubuntu runner 预装了 Android SDK/NDK，无需 setup-android
+      - name: Accept Android licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
 
       - name: Build release APK
         run: ./gradlew assembleRelease -PIS_SO_BUILD=false --console=plain
