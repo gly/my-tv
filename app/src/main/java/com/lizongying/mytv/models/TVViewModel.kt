@@ -88,7 +88,19 @@ class TVViewModel(private var tv: TV) : ViewModel() {
 
     init {
         _videoUrl.value = tv.videoUrl
-        _videoIndex.value = tv.videoUrl.lastIndex
+        _videoIndex.value = 0
+    }
+
+    /**
+     * 播放失败重试：自动切换到同频道的下一个源，循环尝试
+     */
+    fun retry() {
+        val size = _videoUrl.value?.size ?: 0
+        if (size > 1) {
+            val idx = _videoIndex.value ?: 0
+            _videoIndex.value = (idx + 1) % size
+        }
+        changed()
     }
 
     fun getRowPosition(): Int {

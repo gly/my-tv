@@ -24,6 +24,7 @@ import com.lizongying.mytv.models.TVListViewModel
 import com.lizongying.mytv.models.TVViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainFragment : BrowseSupportFragment() {
 
@@ -72,6 +73,17 @@ class MainFragment : BrowseSupportFragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
+        // 异步加载直播源后构建频道列表
+        lifecycleScope.launch(Dispatchers.IO) {
+            val ok = TVList.load(context!!)
+            Log.i(TAG, "TVList loaded $ok")
+            withContext(Dispatchers.Main) {
+                setup()
+            }
+        }
+    }
+
+    private fun setup() {
         activity?.let { YSP.init(it) }
 
         loadRows()
@@ -300,6 +312,10 @@ class MainFragment : BrowseSupportFragment() {
 
     private fun updateEPG(tvViewModel: TVViewModel) {
         when (tvViewModel.getTV().programType) {
+            ProgramType.NONE -> {
+                // 自定义直播源，无 EPG
+            }
+
             ProgramType.Y_PROTO -> {
                 Request.fetchYProtoEPG(tvViewModel)
             }

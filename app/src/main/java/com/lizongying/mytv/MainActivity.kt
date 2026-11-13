@@ -36,6 +36,7 @@ class MainActivity : FragmentActivity(), Request.RequestListener {
     private val errorFragment = ErrorFragment()
 
     private var doubleBackToExitPressedOnce = false
+    private var mainFragmentStarted = false
 
     private lateinit var gestureDetector: GestureDetector
 
@@ -204,7 +205,9 @@ class MainActivity : FragmentActivity(), Request.RequestListener {
     fun fragmentReady(tag: String) {
         ready++
         Log.i(TAG, "ready $tag $ready ")
-        if (ready == 6) {
+        // 直播源模式下 Request 回调不再参与，改为 MainFragment 就绪后触发首次播放
+        if (tag == "MainFragment" && ready >= 5 && !mainFragmentStarted) {
+            mainFragmentStarted = true
             mainFragment.fragmentReady()
             showTime()
         }
