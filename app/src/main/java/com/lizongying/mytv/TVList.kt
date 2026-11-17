@@ -45,6 +45,15 @@ object TVList {
     }
 
     /**
+     * 直播源缓存是否过期（超过 12 小时需要刷新）
+     */
+    fun isCacheStale(context: Context): Boolean {
+        val file = File(context.filesDir, CACHE_FILE)
+        if (!file.exists() || file.length() == 0L) return true
+        return System.currentTimeMillis() - file.lastModified() > 12 * 60 * 60 * 1000L
+    }
+
+    /**
      * 从网络重新拉取直播源并写入缓存（下次启动生效）
      */
     fun refresh(context: Context): Boolean {

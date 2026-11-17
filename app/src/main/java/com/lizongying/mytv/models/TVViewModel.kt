@@ -103,6 +103,22 @@ class TVViewModel(private var tv: TV) : ViewModel() {
         changed()
     }
 
+    /**
+     * 按测速结果重排源列表（保持当前正在播放的源在最前，避免打断播放）
+     */
+    fun reorderUrls(ordered: List<String>) {
+        val current = _videoUrl.value ?: return
+        if (ordered.size != current.size || ordered.toSet() != current.toSet()) return
+        val playingIndex = _videoIndex.value ?: 0
+        val playing = current.getOrNull(playingIndex) ?: return
+        val new = ordered.toMutableList()
+        new.remove(playing)
+        new.add(0, playing)
+        tv.videoUrl = new
+        _videoUrl.value = new
+        _videoIndex.value = 0
+    }
+
     fun getRowPosition(): Int {
         return rowPosition
     }

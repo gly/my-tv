@@ -15,7 +15,11 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.lizongying.mytv.databinding.PlayerBinding
@@ -54,8 +58,25 @@ class PlayerFragment : Fragment(), SurfaceHolder.Callback {
             ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 playerView!!.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                playerView!!.player = activity?.let {
-                    ExoPlayer.Builder(it)
+                playerView!!.player = activity?.let { activityContext ->
+                    // 大缓冲 + 宽松超时，抵抗免费源的网络抖动，减少误换源导致的黑屏卡顿
+                    val httpFactory = DefaultHttpDataSource.Factory()
+                        .setConnectTimeoutMs(15000)
+                        .setReadTimeoutMs(15000)
+                        .setAllowCrossProtocolRedirects(true)
+                    val dataSourceFactory = DefaultDataSource.Factory(activityContext, httpFactory)
+                    val loadControl = DefaultLoadControl.Builder()
+                        .setBufferDurationsMs(
+                            45000,   // minBufferMs
+                            90000,   // maxBufferMs
+                            2500,    // bufferForPlaybackMs
+                            5000     // bufferForPlaybackAfterRebufferMs
+                        )
+                        .setBackBuffer(25000, false)   // 回逰缓冲25秒，切台回看不重新加载
+                        .build()
+                    ExoPlayer.Builder(activityContext)
+                        .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+                        .setLoadControl(loadControl)
                         .build()
                 }
                 playerView!!.player?.playWhenReady = true

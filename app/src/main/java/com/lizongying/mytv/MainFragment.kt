@@ -138,6 +138,38 @@ class MainFragment : BrowseSupportFragment() {
         }
 
         (activity as MainActivity).fragmentReady("MainFragment")
+
+        // 后台优化：测速排序源 + 刷新过期的直播源缓存
+        lifecycleScope.launch(Dispatchers.IO) {
+            val ctx = context ?: return@launch
+            val cached = SourceTester.loadCache(ctx)
+            if (cached != null) {
+                Log.i(TAG, "probe cache hit: ${cached.size} urls")
+                applyProbeOrder(cached)
+            } else {
+                val results = SourceTester.probe(TVList.list)
+                SourceTester.saveCache(ctx, results)
+                applyProbeOrder(results)
+            }
+            if (TVList.isCacheStale(ctx)) {
+                TVList.refresh(ctx)
+            }
+        }
+    }
+
+    /**
+     * 将测速结果应用到频道列表：每个频道最快的源排到最前
+     * （reorderUrls 会把正在播放的源钉在首位，不会打断当前播放）
+     */
+    private fun applyProbeOrder(results: Map<String, Int>) {
+        lifecycleScope.launch(Dispatchers.Main) {
+            tvListViewModel.tvListViewModel.value?.forEach { tvViewModel ->
+                val ordered = tvViewModel.getTV().videoUrl.sortedBy { results[it] ?: Int.MAX_VALUE }
+                if (ordered != tvViewModel.getTV().videoUrl) {
+                    tvViewModel.reorderUrls(ordered)
+                }
+            }
+        }
     }
 
     fun toLastPosition() {
