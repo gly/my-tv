@@ -160,15 +160,32 @@ class MainFragment : BrowseSupportFragment() {
     /**
      * 将测速结果应用到频道列表：每个频道最快的源排到最前
      * （reorderUrls 会把正在播放的源钉在首位，不会打断当前播放）
+     * 超过清晰度上限的源降权排到最后（URL 含 1080/4K 等标记时判定）
      */
     private fun applyProbeOrder(results: Map<String, Int>) {
+        val cap = SP.videoHeight
         lifecycleScope.launch(Dispatchers.Main) {
             tvListViewModel.tvListViewModel.value?.forEach { tvViewModel ->
-                val ordered = tvViewModel.getTV().videoUrl.sortedBy { results[it] ?: Int.MAX_VALUE }
+                val ordered = tvViewModel.getTV().videoUrl.sortedBy { url ->
+                    var score = results[url] ?: Int.MAX_VALUE
+                    if (cap > 0 && isOverCap(url, cap)) {
+                        score += 1_000_000
+                    }
+                    score
+                }
                 if (ordered != tvViewModel.getTV().videoUrl) {
                     tvViewModel.reorderUrls(ordered)
                 }
             }
+        }
+    }
+
+    private fun isOverCap(url: String, cap: Int): Boolean {
+        val lower = url.lowercase()
+        return if (cap <= 720) {
+            lower.contains("1080") || lower.contains("4k") || lower.contains("uhd")
+        } else {
+            lower.contains("4k") || lower.contains("uhd")
         }
     }
 

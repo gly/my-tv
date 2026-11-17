@@ -22,6 +22,7 @@ object SP {
 
     // Position in list of the selected channel item
     private const val KEY_POSITION = "position"
+    private const val KEY_VIDEO_HEIGHT = "video_height"
 
     // guid
     private const val KEY_GUID = "guid"
@@ -58,6 +59,13 @@ object SP {
     var itemPosition: Int
         get() = sp.getInt(KEY_POSITION, 0)
         set(value) = sp.edit().putInt(KEY_POSITION, value).apply()
+
+    /**
+     * 最高解码分辨率（0=不限，1080、720=限制最高高度）
+     */
+    var videoHeight: Int
+        get() = sp.getInt(KEY_VIDEO_HEIGHT, 0)
+        set(value) = sp.edit().putInt(KEY_VIDEO_HEIGHT, value).apply()
 
     var guid: String
         get() = sp.getString(KEY_GUID, "") ?: ""

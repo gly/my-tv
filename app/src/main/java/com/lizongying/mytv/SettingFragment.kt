@@ -16,6 +16,12 @@ class SettingFragment : DialogFragment() {
 
     private lateinit var updateManager: UpdateManager
 
+    private fun videoHeightText(h: Int): String = when (h) {
+        1080 -> "清晰度: 最高1080P"
+        720 -> "清晰度: 最高720P"
+        else -> "清晰度: 不限"
+    }
+
     override fun onStart() {
         super.onStart()
         dialog?.window?.apply {
@@ -69,6 +75,18 @@ class SettingFragment : DialogFragment() {
                 SP.bootStartup = isChecked
                 (activity as MainActivity).settingDelayHide()
             }
+        }
+
+        binding.videoHeight.text = videoHeightText(SP.videoHeight)
+        binding.videoHeight.setOnClickListener {
+            SP.videoHeight = when (SP.videoHeight) {
+                0 -> 1080
+                1080 -> 720
+                else -> 0
+            }
+            binding.videoHeight.text = videoHeightText(SP.videoHeight)
+            (activity as MainActivity).applyVideoHeight()
+            (activity as MainActivity).settingDelayHide()
         }
 
         updateManager = UpdateManager(context, this, context.appVersionCode)

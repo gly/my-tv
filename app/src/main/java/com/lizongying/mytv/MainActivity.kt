@@ -135,6 +135,13 @@ class MainActivity : FragmentActivity(), Request.RequestListener {
         mainFragment.play(itemPosition)
     }
 
+    /**
+     * 设置页修改清晰度后实时应用
+     */
+    fun applyVideoHeight() {
+        playerFragment.applyVideoHeight()
+    }
+
     fun prev() {
         mainFragment.prev()
     }

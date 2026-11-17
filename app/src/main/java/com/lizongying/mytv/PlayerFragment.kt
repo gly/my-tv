@@ -18,6 +18,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
@@ -74,7 +75,9 @@ class PlayerFragment : Fragment(), SurfaceHolder.Callback {
                         )
                         .setBackBuffer(25000, false)   // 回逰缓冲25秒，切台回看不重新加载
                         .build()
-                    ExoPlayer.Builder(activityContext)
+                    val renderersFactory = DefaultRenderersFactory(activityContext)
+                        .setEnableDecoderFallback(true)   // 主解码器失败时自动尝试备用解码器
+                    ExoPlayer.Builder(activityContext, renderersFactory)
                         .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
                         .setLoadControl(loadControl)
                         .build()
@@ -120,6 +123,7 @@ class PlayerFragment : Fragment(), SurfaceHolder.Callback {
     @OptIn(UnstableApi::class)
     fun play(tvViewModel: TVViewModel) {
         this.tvViewModel = tvViewModel
+        applyVideoHeight()
         playerView?.player?.run {
             setMediaItem(MediaItem.fromUri(tvViewModel.getVideoUrlCurrent()))
             prepare()
@@ -127,6 +131,21 @@ class PlayerFragment : Fragment(), SurfaceHolder.Callback {
         exoPlayer?.run {
             setMediaItem(com.google.android.exoplayer2.MediaItem.fromUri(tvViewModel.getVideoUrlCurrent()))
             prepare()
+        }
+    }
+
+    /**
+     * 应用清晰度限制（设置页修改后调用）
+     */
+    @OptIn(UnstableApi::class)
+    fun applyVideoHeight() {
+        val max = SP.videoHeight
+        val height = if (max > 0) max else Int.MAX_VALUE
+        playerView?.player?.let { player ->
+            player.trackSelectionParameters = player.trackSelectionParameters
+                .buildUpon()
+                .setMaxVideoSize(Int.MAX_VALUE, height)
+                .build()
         }
     }
 
